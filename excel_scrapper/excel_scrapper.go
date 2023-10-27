@@ -38,8 +38,8 @@ func to_pretty(elem []string) []string {
 	return elem
 }
 
-func Read_schedule() map[string]map[int][][]string {
-	PATH := "schedule/excel_scrapper/PI.xlsx"
+func read_schedule() map[string]map[int][][]string {
+	PATH := "excel_scrapper/PI.xlsx"
 	rows := read_file(PATH)
 	week := []string{"понедельник", "вторник", "среда", "четверг", "пятница", "суббота"}
 	lessons_type := []string{"лк", "пз"} //тип пары
@@ -50,6 +50,7 @@ func Read_schedule() map[string]map[int][][]string {
 	var all_info map[string]map[int][][]string //вся информация. КЛЮЧ_1 - День. Ключ_2-номер пары, значение-массив pair
 	all_info = make(map[string]map[int][][]string)
 
+	comment := ""   //комментарий преподавателя
 	day := ""       //день недели
 	number := 1     //номер пары
 	subject_1 := "" //предмет первой подгруппы
@@ -146,8 +147,8 @@ func Read_schedule() map[string]map[int][][]string {
 				} else if lt == "" {
 					continue
 				}
-				pair[number] = append(pair[number], []string{subject_1, teacher_1, address_1, lt})
-				pair[number] = append(pair[number], []string{subject_2, teacher_2, address_2, lt})
+				pair[number] = append(pair[number], []string{subject_1, teacher_1, address_1, lt, comment})
+				pair[number] = append(pair[number], []string{subject_2, teacher_2, address_2, lt, comment})
 				lt = ""
 			} //Информация за number пару
 
@@ -155,4 +156,24 @@ func Read_schedule() map[string]map[int][][]string {
 	}
 	return all_info
 
+}
+
+func Get_information() map[string]map[string]map[int][][]string {
+	all_info := read_schedule()
+	var re_info map[string]map[string]map[int][][]string
+	re_info = make(map[string]map[string]map[int][][]string)
+	groups := []string{"231-1", "231-2", "232-1", "232-2", "233-1", "233-2"}
+
+	for i := 0; i < len(groups); i++ {
+		elem := groups[i]
+		re_info[elem] = map[string]map[int][][]string{}
+		for day := range all_info {
+			re_info[elem][day] = map[int][][]string{}
+			for number, subject := range all_info[day] {
+				re_info[elem][day][number] = make([][]string, 0)
+				re_info[elem][day][number] = [][]string{subject[i], subject[i+6]}
+			}
+		}
+	}
+	return re_info
 }
