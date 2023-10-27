@@ -158,7 +158,8 @@ func read_schedule() map[string]map[int][][]string {
 
 }
 
-func Get_information() map[string]map[string]map[int]map[string][]string {
+func Get_information() map[string]map[string]map[int]map[string][]string { //делаем более красивый вид ДБ
+	//можно было сразу, но мне уже страшно переделывать код
 	all_info := read_schedule()
 	var re_info map[string]map[string]map[int]map[string][]string
 	re_info = make(map[string]map[string]map[int]map[string][]string)

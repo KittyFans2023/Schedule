@@ -23,8 +23,8 @@ func Make_db(json_data map[string]map[string]map[int]map[string][]string) {
 			panic(err)
 		}
 	}()
-	client.Database("CFU").Collection("schedule").Drop(context.TODO())
+	client.Database("CFU").Collection("schedule").Drop(context.TODO()) //ощищаем нашу коллекцию с расписанием
 	collection := client.Database("CFU").Collection("schedule")
-	collection.InsertOne(context.TODO(), json_data)
+	collection.InsertOne(context.TODO(), json_data) //записываем в нее новое
 
 }
