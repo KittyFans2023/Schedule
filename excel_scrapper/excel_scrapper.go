@@ -158,20 +158,24 @@ func read_schedule() map[string]map[int][][]string {
 
 }
 
-func Get_information() map[string]map[string]map[int][][]string {
+func Get_information() map[string]map[string]map[int]map[string][]string {
 	all_info := read_schedule()
-	var re_info map[string]map[string]map[int][][]string
-	re_info = make(map[string]map[string]map[int][][]string)
+	var re_info map[string]map[string]map[int]map[string][]string
+	re_info = make(map[string]map[string]map[int]map[string][]string)
 	groups := []string{"231-1", "231-2", "232-1", "232-2", "233-1", "233-2"}
 
 	for i := 0; i < len(groups); i++ {
 		elem := groups[i]
-		re_info[elem] = map[string]map[int][][]string{}
+		re_info[elem] = make(map[string]map[int]map[string][]string)
 		for day := range all_info {
-			re_info[elem][day] = map[int][][]string{}
+			re_info[elem][day] = make(map[int]map[string][]string)
 			for number, subject := range all_info[day] {
-				re_info[elem][day][number] = make([][]string, 0)
-				re_info[elem][day][number] = [][]string{subject[i], subject[i+6]}
+				re_info[elem][day][number] = make(map[string][]string)
+				re_info[elem][day][number]["нечетная"] = make([]string, 0)
+				re_info[elem][day][number]["четная"] = make([]string, 0)
+
+				re_info[elem][day][number]["нечетная"] = subject[i]
+				re_info[elem][day][number]["четная"] = subject[i+6]
 			}
 		}
 	}
