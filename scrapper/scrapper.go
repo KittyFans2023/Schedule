@@ -40,9 +40,8 @@ func dowloand(Link string) {
 	scrapper.Visit(URL)
 }
 
-func Parse_to_json(Link string) map[string]map[string]map[int]map[string][]string {
+func Parse(Link string) []map[string]interface{} {
 	dowloand(Link)
-	schedule := excel_scrapper.Get_information()
-
+	schedule := excel_scrapper.Update()
 	return schedule
 }
