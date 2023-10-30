@@ -3,7 +3,6 @@ package excel_scrapper
 import (
 	"fmt"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/xuri/excelize/v2"
@@ -159,32 +158,39 @@ func read_schedule() map[string]map[int][][]string {
 
 }
 
-func Update() []map[string]interface{} { //делаем более красивый вид ДБ
+type Info struct {
+	Group    string
+	WeekType string
+	Day      string
+	Lessons  map[int][]string
+}
+
+func Update() []Info { //делаем более красивый вид ДБ
 	//можно было сразу, но мне уже страшно переделывать код
 	all_info := read_schedule()
-	var res []map[string]interface{}
-
-	var chet, nechet map[string]interface{}
+	var res []Info
 
 	groups := []string{"231-1", "231-2", "232-1", "232-2", "233-1", "233-2"}
 
 	for i := 0; i < len(groups); i++ {
 
 		for day := range all_info {
-			chet = make(map[string]interface{}) // обнвляем карту четных и нечетных
-			nechet = make(map[string]interface{})
+			var chet, nechet Info
 			elem := groups[i]
-			chet["group"] = elem
-			chet["week_type"] = "четная"
+			chet.Group = elem
+			chet.WeekType = "четная"
 
-			nechet["group"] = elem
-			nechet["week_type"] = "нечетная"
-			chet["day"] = day
-			nechet["day"] = day
+			nechet.Group = elem
+			nechet.WeekType = "нечетная"
+			chet.Day = day
+			nechet.Day = day
+			chet.Lessons = make(map[int][]string)
+			nechet.Lessons = make(map[int][]string)
 			for number, subject := range all_info[day] {
 
-				chet[strconv.Itoa(number)] = subject[i+6]
-				nechet[strconv.Itoa(number)] = subject[i]
+				chet.Lessons[number] = subject[i+6]
+				nechet.Lessons[number] = subject[i]
+
 			}
 			res = append(res, chet) //добавляем инфу
 			res = append(res, nechet)

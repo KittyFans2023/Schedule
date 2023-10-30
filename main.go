@@ -2,20 +2,22 @@ package main
 
 import (
 	"net/http"
-	"schedule/GO/schedule/update"
+	"schedule/GO/schedule/API"
 
 	"github.com/gorilla/mux"
 )
 
 func main() {
-	// router := mux.NewRouter()
-	update.Get_info_about()
+	router := mux.NewRouter()
 
-	// router.HandleFunc("/schedule", homeHendler)
-	// router.HandleFunc("/schedule/update", updateHendler)
-	// router.HandleFunc("/schedule/get_info/{group_number}", groupHendler)
+	// API.Update("https://cfuv.ru/raspisanie-fakultativov-fiziko-tekhnicheskogo-instituta")
+	// API.Get_info_about("233-1")
 
-	// http.ListenAndServe(":8080", router)
+	router.HandleFunc("/schedule", homeHendler)
+	router.HandleFunc("/schedule/update", updateHendler)
+	router.HandleFunc("/schedule/get_info/{group_number}", groupHendler)
+
+	http.ListenAndServe(":8080", router)
 }
 
 func homeHendler(rw http.ResponseWriter, _ *http.Request) {
@@ -23,11 +25,13 @@ func homeHendler(rw http.ResponseWriter, _ *http.Request) {
 }
 
 func groupHendler(rw http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
-	number := vars["number"]
-	update.Get_info_about(number)
-	rw.Write([]byte(`выполнено`))
+	value := mux.Vars(req)
+	group := value["group_number"]
+	json_data := API.Get_info_about(group)              //получаем наш документ формата json
+	rw.Header().Set("Content-Type", "application/json") //устанавливаем какой будет контент страницы
+	rw.Write([]byte(json_data))                         //переводим в массив байтов
+
 }
 func updateHendler(rw http.ResponseWriter, req *http.Request) {
-	update.Update("https://cfuv.ru/raspisanie-fakultativov-fiziko-tekhnicheskogo-instituta")
+	API.Update("https://cfuv.ru/raspisanie-fakultativov-fiziko-tekhnicheskogo-instituta")
 }

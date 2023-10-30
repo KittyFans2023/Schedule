@@ -40,7 +40,7 @@ func dowloand(Link string) {
 	scrapper.Visit(URL)
 }
 
-func Parse(Link string) []map[string]interface{} {
+func Parse(Link string) []excel_scrapper.Info {
 	dowloand(Link)
 	schedule := excel_scrapper.Update()
 	return schedule

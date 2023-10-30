@@ -1,4 +1,4 @@
-package update
+package API
 
 import (
 	"schedule/GO/schedule/db"
@@ -10,11 +10,11 @@ func Update(URL string) {
 	db.Make_db(data)
 }
 
-func Get_info_about(group ...string) {
+func Get_info_about(group ...string) string {
 	if len(group) == 0 {
-		db.Info_about()
+		return db.Info_about()
 	} else {
-		db.Info_about(group[0])
+		return db.Info_about(group[0])
 	}
 
 }
