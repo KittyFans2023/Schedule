@@ -10,13 +10,10 @@ import (
 func main() {
 	router := mux.NewRouter()
 
-	// API.Update("https://cfuv.ru/raspisanie-fakultativov-fiziko-tekhnicheskogo-instituta")
-	// API.Get_info_about("233-1")
-
 	router.HandleFunc("/schedule", homeHendler)
 	router.HandleFunc("/schedule/update", updateHendler)
 	router.HandleFunc("/schedule/get_info/{group_number}", groupHendler)
-
+	// router.HandleFunc("/schedule/comment/")
 	http.ListenAndServe(":8080", router)
 }
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/xuri/excelize/v2"
 )
@@ -159,43 +160,68 @@ func read_schedule() map[string]map[int][][]string {
 }
 
 type Info struct {
-	Group    string
-	WeekType string
-	Day      string
-	Lessons  map[int][]string
+	Group      string
+	WeekType   string
+	Day        string
+	Lessons    map[int][]string
+	Date_day   int
+	Date_month int
+	Date_year  int
 }
 
 func Update() []Info { //делаем более красивый вид ДБ
+	day_number := map[string]int{
+		"понедельник": 0,
+		"вторник":     1,
+		"среда":       2,
+		"четверг":     3,
+		"пятница":     4,
+	}
 	//можно было сразу, но мне уже страшно переделывать код
 	all_info := read_schedule()
 	var res []Info
-
+	when_monday := int(time.Now().Weekday()) - 1
+	current_date := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day()-when_monday, 0, 0, 0, 0, time.UTC)
+	if current_date.Day()%2 == 0 {
+		current_date = current_date.Add(time.Hour * (-24) * 7)
+	}
 	groups := []string{"231-1", "231-2", "232-1", "232-2", "233-1", "233-2"}
+	for times := 0; times < 2; times++ {
+		for i := 0; i < len(groups); i++ {
+			for day := range all_info {
+				num_of_day := day_number[day]
 
-	for i := 0; i < len(groups); i++ {
+				var chet, nechet Info
+				elem := groups[i]
 
-		for day := range all_info {
-			var chet, nechet Info
-			elem := groups[i]
-			chet.Group = elem
-			chet.WeekType = "четная"
+				chet.Date_day = current_date.Add(time.Hour * time.Duration(24*7+24*num_of_day)).Day()
+				chet.Date_month = int(current_date.Add(time.Hour * time.Duration(24*7+24*num_of_day)).Month())
+				chet.Date_year = current_date.Add(time.Hour * time.Duration(24*7+24*num_of_day)).Year()
+				chet.Day = day
+				chet.Group = elem
+				chet.WeekType = "четная"
+				chet.Lessons = make(map[int][]string)
 
-			nechet.Group = elem
-			nechet.WeekType = "нечетная"
-			chet.Day = day
-			nechet.Day = day
-			chet.Lessons = make(map[int][]string)
-			nechet.Lessons = make(map[int][]string)
-			for number, subject := range all_info[day] {
+				nechet.Date_day = current_date.Add(time.Hour * time.Duration(24*num_of_day)).Day()
+				nechet.Date_month = int(current_date.Add(time.Hour * time.Duration(24*num_of_day)).Month())
+				nechet.Date_year = current_date.Add(time.Hour * time.Duration(24*num_of_day)).Year()
+				nechet.Group = elem
+				nechet.WeekType = "нечетная"
+				nechet.Day = day
+				nechet.Lessons = make(map[int][]string)
+				for number, subject := range all_info[day] {
 
-				chet.Lessons[number] = subject[i+6]
-				nechet.Lessons[number] = subject[i]
+					chet.Lessons[number] = subject[i+6]
+					nechet.Lessons[number] = subject[i]
+
+				}
+				res = append(res, chet) //добавляем инфу
+				res = append(res, nechet)
 
 			}
-			res = append(res, chet) //добавляем инфу
-			res = append(res, nechet)
 
 		}
+		current_date = current_date.Add(time.Hour * 24 * 14)
 
 	}
 	return res
