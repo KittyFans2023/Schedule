@@ -50,20 +50,23 @@ func Info_about(group ...string) string {
 	}()
 	collection := client.Database("CFU").Collection("schedule")
 	var documents []map[string]interface{}
-	if len(group) != 0 {
-		cursor, err := collection.Find(context.Background(), bson.M{"group": group[0]})
+	var cursor *mongo.Cursor
+	if group[0] != "all" {
+		cursor, err = collection.Find(context.Background(), bson.M{"group": group[0]})
 
+	} else {
+		cursor, err = collection.Find(context.Background(), bson.M{})
+	}
+	if err != nil {
+		panic(err)
+	}
+	for cursor.Next(context.Background()) {
+		var document map[string]interface{}
+		err := cursor.Decode(&document)
 		if err != nil {
 			panic(err)
 		}
-		for cursor.Next(context.Background()) {
-			var document map[string]interface{}
-			err := cursor.Decode(&document)
-			if err != nil {
-				panic(err)
-			}
-			documents = append(documents, document)
-		}
+		documents = append(documents, document)
 	}
 	json_data, err := json.Marshal(documents)
 	if err != nil {

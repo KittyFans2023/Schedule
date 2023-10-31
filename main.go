@@ -21,6 +21,11 @@ func homeHendler(rw http.ResponseWriter, _ *http.Request) {
 	rw.Write([]byte(`Пустая`))
 }
 
+//	func teacherHendler(rw http.ResponseWriter, req *http.Request){
+//		value := mux.Vars(req)
+//		name := value{"name"}
+//		json_data := API
+//	}
 func groupHendler(rw http.ResponseWriter, req *http.Request) {
 	value := mux.Vars(req)
 	group := value["group_number"]
