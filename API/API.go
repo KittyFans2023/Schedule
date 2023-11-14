@@ -10,7 +10,9 @@ func Update(URL string) {
 	db.Make_db(schedule)
 }
 
-func Get_info_about(group ...string) string {
-	return db.Info_about(group[0])
-
+func Get_info_about(group string, year int, month int, day int) string {
+	return db.Info_about(group, year, month, day)
+}
+func Next(group string) string {
+	return db.Next_pair(group)
 }

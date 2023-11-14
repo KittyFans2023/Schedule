@@ -177,6 +177,17 @@ func Update() []Info { //делаем более красивый вид ДБ
 		"четверг":     3,
 		"пятница":     4,
 	}
+	timing := map[int]string{
+		1: "8:00",
+		2: "9:50",
+		3: "11:30",
+		4: "13:20",
+		5: "15:00",
+		6: "16:40",
+		7: "18:20",
+		8: "20:00",
+	}
+
 	//можно было сразу, но мне уже страшно переделывать код
 	all_info := read_schedule()
 	var res []Info
@@ -186,7 +197,7 @@ func Update() []Info { //делаем более красивый вид ДБ
 		current_date = current_date.Add(time.Hour * (-24) * 7)
 	}
 	groups := []string{"231-1", "231-2", "232-1", "232-2", "233-1", "233-2"}
-	for times := 0; times < 2; times++ {
+	for times := 0; times < 3; times++ {
 		for i := 0; i < len(groups); i++ {
 			for day := range all_info {
 				num_of_day := day_number[day]
@@ -212,7 +223,9 @@ func Update() []Info { //делаем более красивый вид ДБ
 				for number, subject := range all_info[day] {
 
 					chet.Lessons[number] = subject[i+6]
+					chet.Lessons[number] = append(chet.Lessons[number], timing[number])
 					nechet.Lessons[number] = subject[i]
+					nechet.Lessons[number] = append(nechet.Lessons[number], timing[number])
 
 				}
 				res = append(res, chet) //добавляем инфу
