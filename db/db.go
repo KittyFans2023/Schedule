@@ -35,6 +35,8 @@ func Make_db(data []excel_scrapper.Student_info, teachers_data []excel_scrapper.
 	for _, e := range data {
 		collection.InsertOne(context.Background(), e) //записываем в нее новое
 	}
+	client.Database("CFU").Collection("teachers").Drop(context.TODO()) //ощищаем нашу коллекцию с расписанием
+
 	collection = client.Database("CFU").Collection("teachers")
 	for _, e := range teachers_data {
 		collection.InsertOne(context.Background(), e) //записываем в нее новое
