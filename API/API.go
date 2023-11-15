@@ -6,8 +6,8 @@ import (
 )
 
 func Update(URL string) {
-	schedule := scrapper.Parse(URL)
-	db.Make_db(schedule)
+	schedule, teacher_schedule := scrapper.Parse(URL)
+	db.Make_db(schedule, teacher_schedule)
 }
 
 func Get_info_about(group string, year int, month int, day int) string {

@@ -14,7 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func Make_db(data []excel_scrapper.Info) {
+func Make_db(data []excel_scrapper.Student_info, teachers_data []excel_scrapper.Teacher_info) {
 	// Use the SetServerAPIOptions() method to set the Stable API version to 1
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 	opts := options.Client().ApplyURI("mongodb+srv://projectlaim2023:jTpSqRamIKn3UTT2@cluster0.lxtqivz.mongodb.net/").SetServerAPIOptions(serverAPI)
@@ -33,6 +33,10 @@ func Make_db(data []excel_scrapper.Info) {
 	client.Database("CFU").Collection("schedule").Drop(context.TODO()) //ощищаем нашу коллекцию с расписанием
 	collection := client.Database("CFU").Collection("schedule")
 	for _, e := range data {
+		collection.InsertOne(context.Background(), e) //записываем в нее новое
+	}
+	collection = client.Database("CFU").Collection("teachers")
+	for _, e := range teachers_data {
 		collection.InsertOne(context.Background(), e) //записываем в нее новое
 	}
 }

@@ -3,6 +3,7 @@ package excel_scrapper
 import (
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -159,7 +160,16 @@ func read_schedule() map[string]map[int][][]string {
 
 }
 
-type Info struct {
+type Teacher_info struct {
+	Lessons      map[int][][]string
+	Teacher_name string
+	WeekType     string
+	Day          string
+	Date_day     int
+	Date_month   int
+	Date_year    int
+}
+type Student_info struct {
 	Group      string
 	WeekType   string
 	Day        string
@@ -169,7 +179,15 @@ type Info struct {
 	Date_year  int
 }
 
-func Update() []Info { //делаем более красивый вид ДБ
+func Code(ti Teacher_info) string {
+	date_day := strconv.Itoa(ti.Date_day)
+	date_month := strconv.Itoa(ti.Date_month)
+	date_year := strconv.Itoa(ti.Date_year)
+	name := ti.Teacher_name
+	return date_day + "-" + date_month + "-" + date_year + "-" + name
+}
+
+func Update() ([]Student_info, []Teacher_info) { //делаем более красивый вид ДБ
 	day_number := map[string]int{
 		"понедельник": 0,
 		"вторник":     1,
@@ -187,10 +205,11 @@ func Update() []Info { //делаем более красивый вид ДБ
 		7: "18:20",
 		8: "20:00",
 	}
-
+	var teachers map[string]Teacher_info
+	teachers = make(map[string]Teacher_info)
 	//можно было сразу, но мне уже страшно переделывать код
 	all_info := read_schedule()
-	var res []Info
+	var res []Student_info
 	when_monday := int(time.Now().Weekday()) - 1
 	current_date := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day()-when_monday, 0, 0, 0, 0, time.UTC)
 	if current_date.Day()%2 == 0 {
@@ -202,34 +221,71 @@ func Update() []Info { //делаем более красивый вид ДБ
 			for day := range all_info {
 				num_of_day := day_number[day]
 
-				var chet, nechet Info
+				var chet_stud_schedule, nechet_stud_schedule Student_info
 				elem := groups[i]
 
-				chet.Date_day = current_date.Add(time.Hour * time.Duration(24*7+24*num_of_day)).Day()
-				chet.Date_month = int(current_date.Add(time.Hour * time.Duration(24*7+24*num_of_day)).Month())
-				chet.Date_year = current_date.Add(time.Hour * time.Duration(24*7+24*num_of_day)).Year()
-				chet.Day = day
-				chet.Group = elem
-				chet.WeekType = "четная"
-				chet.Lessons = make(map[int][]string)
+				chet_stud_schedule.Date_day = current_date.Add(time.Hour * time.Duration(24*7+24*num_of_day)).Day()
+				chet_stud_schedule.Date_month = int(current_date.Add(time.Hour * time.Duration(24*7+24*num_of_day)).Month())
+				chet_stud_schedule.Date_year = current_date.Add(time.Hour * time.Duration(24*7+24*num_of_day)).Year()
+				chet_stud_schedule.Day = day
+				chet_stud_schedule.Group = elem
+				chet_stud_schedule.WeekType = "четная"
+				chet_stud_schedule.Lessons = make(map[int][]string)
 
-				nechet.Date_day = current_date.Add(time.Hour * time.Duration(24*num_of_day)).Day()
-				nechet.Date_month = int(current_date.Add(time.Hour * time.Duration(24*num_of_day)).Month())
-				nechet.Date_year = current_date.Add(time.Hour * time.Duration(24*num_of_day)).Year()
-				nechet.Group = elem
-				nechet.WeekType = "нечетная"
-				nechet.Day = day
-				nechet.Lessons = make(map[int][]string)
+				nechet_stud_schedule.Date_day = current_date.Add(time.Hour * time.Duration(24*num_of_day)).Day()
+				nechet_stud_schedule.Date_month = int(current_date.Add(time.Hour * time.Duration(24*num_of_day)).Month())
+				nechet_stud_schedule.Date_year = current_date.Add(time.Hour * time.Duration(24*num_of_day)).Year()
+				nechet_stud_schedule.Group = elem
+				nechet_stud_schedule.WeekType = "нечетная"
+				nechet_stud_schedule.Day = day
+				nechet_stud_schedule.Lessons = make(map[int][]string)
+
 				for number, subject := range all_info[day] {
+					if subject[i+6][1] == "" && subject[i+6][3] == "лк" {
+						subject[i+6][1] = subject[i][1]
+					}
+					if subject[i][1] == "" && subject[i][3] == "лк" {
+						subject[i][1] = subject[i][1]
+					}
+					chet_stud_schedule.Lessons[number] = subject[i+6]
+					chet_stud_schedule.Lessons[number] = append(chet_stud_schedule.Lessons[number], timing[number])
+					nechet_stud_schedule.Lessons[number] = subject[i]
+					nechet_stud_schedule.Lessons[number] = append(nechet_stud_schedule.Lessons[number], timing[number])
 
-					chet.Lessons[number] = subject[i+6]
-					chet.Lessons[number] = append(chet.Lessons[number], timing[number])
-					nechet.Lessons[number] = subject[i]
-					nechet.Lessons[number] = append(nechet.Lessons[number], timing[number])
+					if subject[i+6][1] != "" {
+						chet_teacher := Teacher_info{Teacher_name: subject[i+6][1],
+							WeekType:   chet_stud_schedule.WeekType,
+							Day:        chet_stud_schedule.Day,
+							Date_day:   chet_stud_schedule.Date_day,
+							Date_month: chet_stud_schedule.Date_month,
+							Date_year:  chet_stud_schedule.Date_year,
+						}
+						cod := Code(chet_teacher)
 
+						if len(teachers[cod].Lessons) == 0 {
+							chet_teacher.Lessons = make(map[int][][]string)
+							teachers[cod] = chet_teacher
+						}
+						teachers[cod].Lessons[number] = append(teachers[cod].Lessons[number], []string{subject[i+6][0], elem, subject[i+6][2], subject[i+6][3], subject[i+6][4]})
+					}
+					if subject[i][1] != "" {
+						nechet_teacher := Teacher_info{Teacher_name: subject[i][1],
+							WeekType:   nechet_stud_schedule.WeekType,
+							Day:        nechet_stud_schedule.Day,
+							Date_day:   nechet_stud_schedule.Date_day,
+							Date_month: nechet_stud_schedule.Date_month,
+							Date_year:  nechet_stud_schedule.Date_year,
+						}
+						cod := Code(nechet_teacher)
+						if len(teachers[cod].Lessons) == 0 {
+							nechet_teacher.Lessons = make(map[int][][]string)
+							teachers[cod] = nechet_teacher
+						}
+						teachers[cod].Lessons[number] = append(teachers[cod].Lessons[number], []string{subject[i][0], elem, subject[i][2], subject[i][3], subject[i][4]})
+					}
 				}
-				res = append(res, chet) //добавляем инфу
-				res = append(res, nechet)
+				res = append(res, chet_stud_schedule) //добавляем инфу
+				res = append(res, nechet_stud_schedule)
 
 			}
 
@@ -237,5 +293,9 @@ func Update() []Info { //делаем более красивый вид ДБ
 		current_date = current_date.Add(time.Hour * 24 * 14)
 
 	}
-	return res
+	var teacher_result []Teacher_info
+	for _, key := range teachers {
+		teacher_result = append(teacher_result, key)
+	}
+	return res, teacher_result
 }

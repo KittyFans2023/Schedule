@@ -9,7 +9,6 @@ import (
 )
 
 func main() {
-	// API.Update("https://cfuv.ru/raspisanie-fakultativov-fiziko-tekhnicheskogo-institut")
 	router := mux.NewRouter()
 
 	router.HandleFunc("/schedule", homeHendler)
