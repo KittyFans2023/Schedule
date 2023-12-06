@@ -1,7 +1,9 @@
 package excel_scrapper
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -41,7 +43,7 @@ func to_pretty(elem []string) []string {
 }
 
 func read_schedule() map[string]map[int][][]string {
-	PATH := "excel_scrapper/PI.xlsx"
+	PATH := "schedule_api/excel_scrapper/PI.xlsx"
 	rows := read_file(PATH)
 	week := []string{"понедельник", "вторник", "среда", "четверг", "пятница", "суббота"}
 	lessons_type := []string{"лк", "пз"} //тип пары
@@ -122,9 +124,9 @@ func read_schedule() map[string]map[int][][]string {
 					teacher_1 = teach[i]
 					address_1 = addr[i]
 
-					subject_2 = elem[i]
-					teacher_2 = rows[index+1][i]
-					address_2 = addr[i]
+					subject_2 = subject_1
+					teacher_2 = teacher_1
+					address_2 = address_1
 
 				} else if lt == "пз" { //если обычное пз, то взависимости от того, кому принадлежат
 					teach = append(teach, "") //чтобы избежать ошибки при попытке доступа к элементу
@@ -211,12 +213,16 @@ func Update() ([]Student_info, []Teacher_info) { //делаем более кр�
 	all_info := read_schedule()
 	var res []Student_info
 	when_monday := int(time.Now().Weekday()) - 1
-	current_date := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day()-when_monday, 0, 0, 0, 0, time.UTC)
-	if current_date.Day()%2 == 0 {
+	current_date := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day()-when_monday, 12, 0, 0, 0, time.UTC)
+	if !is_nechet(current_date) {
 		current_date = current_date.Add(time.Hour * (-24) * 7)
 	}
+
 	groups := []string{"231-1", "231-2", "232-1", "232-2", "233-1", "233-2"}
 	for times := 0; times < 3; times++ {
+		if !is_nechet(current_date) {
+			current_date = current_date.Add(time.Hour * (-24) * 7)
+		}
 		for i := 0; i < len(groups); i++ {
 			for day := range all_info {
 				num_of_day := day_number[day]
@@ -229,23 +235,20 @@ func Update() ([]Student_info, []Teacher_info) { //делаем более кр�
 				chet_stud_schedule.Date_year = current_date.Add(time.Hour * time.Duration(24*7+24*num_of_day)).Year()
 				chet_stud_schedule.Day = day
 				chet_stud_schedule.Group = elem
-				chet_stud_schedule.WeekType = "четная"
 				chet_stud_schedule.Lessons = make(map[int][]string)
+				chet_stud_schedule.WeekType = "четная"
 
 				nechet_stud_schedule.Date_day = current_date.Add(time.Hour * time.Duration(24*num_of_day)).Day()
 				nechet_stud_schedule.Date_month = int(current_date.Add(time.Hour * time.Duration(24*num_of_day)).Month())
 				nechet_stud_schedule.Date_year = current_date.Add(time.Hour * time.Duration(24*num_of_day)).Year()
 				nechet_stud_schedule.Group = elem
-				nechet_stud_schedule.WeekType = "нечетная"
 				nechet_stud_schedule.Day = day
 				nechet_stud_schedule.Lessons = make(map[int][]string)
+				nechet_stud_schedule.WeekType = "нечетная"
 
 				for number, subject := range all_info[day] {
 					if subject[i+6][1] == "" && subject[i+6][3] == "лк" {
 						subject[i+6][1] = subject[i][1]
-					}
-					if subject[i][1] == "" && subject[i][3] == "лк" {
-						subject[i][1] = subject[i][1]
 					}
 					chet_stud_schedule.Lessons[number] = subject[i+6]
 					chet_stud_schedule.Lessons[number] = append(chet_stud_schedule.Lessons[number], timing[number])
@@ -253,7 +256,7 @@ func Update() ([]Student_info, []Teacher_info) { //делаем более кр�
 					nechet_stud_schedule.Lessons[number] = append(nechet_stud_schedule.Lessons[number], timing[number])
 
 					if subject[i+6][1] != "" {
-						chet_teacher := Teacher_info{Teacher_name: subject[i+6][1],
+						chet_teacher := Teacher_info{Teacher_name: strings.Join(strings.Split(subject[i+6][1], " "), ""),
 							WeekType:   chet_stud_schedule.WeekType,
 							Day:        chet_stud_schedule.Day,
 							Date_day:   chet_stud_schedule.Date_day,
@@ -266,10 +269,10 @@ func Update() ([]Student_info, []Teacher_info) { //делаем более кр�
 							chet_teacher.Lessons = make(map[int][][]string)
 							teachers[cod] = chet_teacher
 						}
-						teachers[cod].Lessons[number] = append(teachers[cod].Lessons[number], []string{subject[i+6][0], elem, subject[i+6][2], subject[i+6][3], subject[i+6][4]})
+						teachers[cod].Lessons[number] = append(teachers[cod].Lessons[number], []string{subject[i+6][0], elem, subject[i+6][2], subject[i+6][3], subject[i+6][4], timing[number]})
 					}
 					if subject[i][1] != "" {
-						nechet_teacher := Teacher_info{Teacher_name: subject[i][1],
+						nechet_teacher := Teacher_info{Teacher_name: strings.Join(strings.Split(subject[i][1], " "), ""),
 							WeekType:   nechet_stud_schedule.WeekType,
 							Day:        nechet_stud_schedule.Day,
 							Date_day:   nechet_stud_schedule.Date_day,
@@ -281,7 +284,7 @@ func Update() ([]Student_info, []Teacher_info) { //делаем более кр�
 							nechet_teacher.Lessons = make(map[int][][]string)
 							teachers[cod] = nechet_teacher
 						}
-						teachers[cod].Lessons[number] = append(teachers[cod].Lessons[number], []string{subject[i][0], elem, subject[i][2], subject[i][3], subject[i][4]})
+						teachers[cod].Lessons[number] = append(teachers[cod].Lessons[number], []string{subject[i][0], elem, subject[i][2], subject[i][3], subject[i][4], timing[number]})
 					}
 				}
 				res = append(res, chet_stud_schedule) //добавляем инфу
@@ -297,5 +300,71 @@ func Update() ([]Student_info, []Teacher_info) { //делаем более кр�
 	for _, key := range teachers {
 		teacher_result = append(teacher_result, key)
 	}
+
+	student, err := json.Marshal(res)
+	if err != nil {
+		panic(err)
+	}
+	teacher, err := json.Marshal(teacher_result)
+	if err != nil {
+		panic(err)
+	}
+	file, err := os.Create("schedule_api/db/students.json")
+	if err != nil {
+		panic(err)
+	}
+	file.Write(student)
+
+	file, err = os.Create("schedule_api/db/teachers.json")
+	if err != nil {
+		panic(err)
+	}
+	file.Write(teacher)
 	return res, teacher_result
+}
+
+func is_nechet(date time.Time) bool {
+	nechet_weeks := "11.09-17.09; 25.09-01.10; 09.10-15.10; 23.10-29.10; 06.11-12.11; 20.11-26.11; 04.12-10.12; 18.12-24.12"
+	weeks := strings.Split(nechet_weeks, "; ")
+	for _, value := range weeks {
+		period := strings.Split(value, "-")
+		start := strings.Split(period[0], ".")
+		s_day, _ := strconv.Atoi(start[0])
+		s_month, _ := strconv.Atoi(start[1])
+		end := strings.Split(period[1], ".")
+		e_day, _ := strconv.Atoi(end[0])
+		e_month, _ := strconv.Atoi(end[1])
+		start_date := time.Date(date.Year(), time.Month(s_month), s_day, 0, 0, 0, 0, time.UTC)
+		end_date := time.Date(date.Year(), time.Month(e_month), e_day, 0, 0, 0, 0, time.UTC)
+		if e_month < s_month {
+			end_date = time.Date(end_date.Year()+1, time.Month(e_month), e_day, 24, 0, 0, 0, time.UTC)
+		}
+		if date.Before(end_date) && start_date.Before(date) {
+			return true
+		}
+
+	}
+	return false
+}
+func is_chet(date time.Time) bool {
+	chet_weeks := "18.09-24.09; 02.10-08.10; 16.10-22.10; 30.10-05.11; 13.11-19.11; 27.11-03.12; 11.12-17.12; 25.12-31.12"
+	weeks := strings.Split(chet_weeks, "; ")
+	for _, value := range weeks {
+		period := strings.Split(value, "-")
+		start := strings.Split(period[0], ".")
+		s_day, _ := strconv.Atoi(start[0])
+		s_month, _ := strconv.Atoi(start[1])
+		end := strings.Split(period[1], ".")
+		e_day, _ := strconv.Atoi(end[0])
+		e_month, _ := strconv.Atoi(end[1])
+		start_date := time.Date(date.Year(), time.Month(s_month), s_day, 0, 0, 0, 0, time.UTC)
+		end_date := time.Date(date.Day(), time.Month(e_month), e_day, 0, 0, 0, 0, time.UTC)
+		if e_month < s_month {
+			end_date = time.Date(end_date.Year()+1, time.Month(e_month), e_day, 0, 0, 0, 0, time.UTC)
+		}
+		if date.Before(end_date) && start_date.Before(date) {
+			return true
+		}
+	}
+	return false
 }
