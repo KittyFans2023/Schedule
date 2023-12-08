@@ -46,11 +46,11 @@ def schedule_for_student(year,month,day, group, message):
         month = "0"+str(month)
     response = requests.get("http://localhost:80//schedule/student/pairInfo/"+str(year)+"/"+str(month)+"/"+str(day)+"/"+group)
     if response.text =='':
-        bot.send_message(message.chat.id, text="У вас сегодня нет пар")
+        bot.send_message(message.chat.id, text="Нет пар")
         return
     c = json.loads(response.text)
     if c == "null": 
-        bot.send_message(chat_id=message.chat.id, text="Сегодня пар нет!\n^_^\n")
+        bot.send_message(chat_id=message.chat.id, text="Нет пар\n^_^\n")
         return
     information = [i[1] for i in c["Lessons"].items()]
     for i in range(0,len(information)):
